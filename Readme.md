@@ -40,7 +40,7 @@ If a prompt is not set via an environment variable or a text file, the default p
 Run the tool with the following command:
 
 ```bash
-./myscript.py <url>
+python main.py <url>
 ```
 
 Replace `<url>` with the URL to process.
@@ -55,7 +55,7 @@ The tool also accepts the following optional command-line flags:
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 
 ```bash
-./myscript.py --max_tokens=2000 --quiet https://www.example.com
+python main.py --max_tokens=2000 --quiet https://www.example.com
 ```
 
 ## Output
