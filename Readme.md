@@ -1,0 +1,61 @@
+# Text Analysis CLI Tool
+
+This is a Python command-line tool that takes a URL as input and uses the OpenAI API to generate a summary and sentiment analysis of the text found at the URL. It can process plain text from HTML pages, transcripts from YouTube video links, and text from PDF documents.
+
+## Installation
+
+Clone this repository to your local machine:
+
+```bash
+git clone https://github.com/ohnotnow/sentiment-analyser
+```
+
+Navigate to the repository directory:
+
+```bash
+cd sentiment-analyser
+```
+
+Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Configuration
+
+The tool uses several environment variables for configuration:
+
+- `OPENAI_API_KEY`: Your OpenAI API key (required)
+- `OPENAI_MODEL`: The OpenAI model to use (default: 'gpt-3.5-turbo-16k')
+- `SUMMARY_PROMPT`: The prompt for the summary request (default: 'Could you summarise this text for me?')
+- `SENTIMENT_PROMPT`: The prompt for the sentiment request (default: 'Could you tell me the sentiment of this text?')
+
+You can set these environment variables in your shell, or you can create a text file with the prompt in the same directory as the script. For example, for `SUMMARY_PROMPT`, you can create a file named `summary_prompt.txt`.
+
+If a prompt is not set via an environment variable or a text file, the default prompt will be used.
+
+## Usage
+
+Run the tool with the following command:
+
+```bash
+./myscript.py <url>
+```
+
+Replace `<url>` with the URL to process.
+
+The tool also accepts the following optional command-line flags:
+
+- `--max_tokens=<number>`: The maximum number of OpenAI tokens in a request (default: 3000)
+- `--quiet`: If set, the tool will not log anything, it will just print the response
+
+For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
+
+```bash
+./myscript.py --max_tokens=2000 --quiet https://www.example.com
+```
+
+## Output
+
+The tool will print the summary and sentiment analysis of the text found at the URL. The sentiment analysis includes a score from 0 (very bad) to 10 (very good) and a short summary of the sentiment.
