@@ -51,6 +51,7 @@ The tool also accepts the following optional command-line flags:
 - `--quiet`: If set, the tool will not log anything, it will just print the response
 - `--no-summary`: If passed, the tool will not perform a summary of the text
 - `--no-analysis`: If passed, the tool will not perform sentiment analysis
+- `--json`: If passed, the tool output the results as a json string
 
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 

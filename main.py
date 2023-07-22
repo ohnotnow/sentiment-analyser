@@ -24,10 +24,10 @@ def get_prompt_from_file(filename):
     except FileNotFoundError:
         return ''
 
-def get_prompt_text(prompt_name):
+def get_prompt_text(prompt_name, quiet=False):
     prompt = os.getenv(f'{prompt_name.upper()}_PROMPT', get_prompt_from_file(f'{prompt_name.lower()}_prompt.txt'))
     if not prompt:
-        print(f'{prompt_name.upper()}_PROMPT not set and {prompt_name.lower()}_prompt.txt not found - using default prompt')
+        print_info(f'{prompt_name.upper()}_PROMPT not set and {prompt_name.lower()}_prompt.txt not found - using default prompt', quiet)
         if prompt_name == 'summary':
             prompt = "Could you summarise this text for me?"
         elif prompt_name == 'sentiment':
@@ -36,14 +36,12 @@ def get_prompt_text(prompt_name):
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo-16k')
-summary_prompt = get_prompt_text('summary')
-sentiment_prompt = get_prompt_text('sentiment')
 
 if not openai.api_key:
     print('You need to set the OPENAI_API_KEY environment variable.')
     exit(1)
 
-def get_sentiment(text):
+def get_sentiment(text, sentiment_prompt):
     functions = [
         {
             "name": "get_sentiment_analysis",
@@ -77,7 +75,7 @@ def get_sentiment(text):
     ]
     return get_openai_response(messages, max_retries=5, functions=functions, function_call=function_call)
 
-def get_summary(text):
+def get_summary(text, summary_prompt):
     messages = [
         {
             "role": "system",
@@ -178,12 +176,23 @@ def main():
     parser.add_argument('--quiet', type=bool, default=False, help='Don\'t log anything - just print the response')
     parser.add_argument('--no-summary', action='store_true', help='Do not generate a summary')
     parser.add_argument('--no-sentiment', action='store_true', help='Do not generate a sentiment analysis')
+    parser.add_argument('--json', action='store_true', help='Output the result as json (implies --quiet)')
 
     args = parser.parse_args()
 
     url = args.url
     max_tokens = args.max_tokens
     quiet = args.quiet
+    json_output = args.json
+
+    if json_output:
+        quiet = True
+
+    summary_prompt = get_prompt_text('summary', quiet)
+    sentiment_prompt = get_prompt_text('sentiment', quiet)
+
+    summary = '';
+    arguments = '';
 
     print_info(f"Getting text from {url}", quiet)
     text = get_text_from_url(url)
@@ -191,19 +200,29 @@ def main():
 
     if not args.no_summary:
         print_info(f"Getting summary of {len(text)} characters", quiet)
-        summary = get_summary(text)
-        print('Summary:')
-        print(summary)
+        summary = get_summary(text, summary_prompt)
+        if not json_output:
+            print('Summary:')
+            print(summary)
 
     if not args.no_sentiment:
         print_info(f"Getting sentiment of {len(text)} characters", quiet)
-        sentiment = get_sentiment(text)
+        sentiment = get_sentiment(text, sentiment_prompt)
         sentiment_dict = sentiment.to_dict()
         # Parse the inner JSON structure
         arguments = json.loads(sentiment_dict['arguments'])
 
-        print('Sentiment:')
-        print(f"Score: {arguments['sentiment_score']} || Analysis: {arguments['sentiment_summary']}")
+        if not json_output:
+            print('Sentiment:')
+            print(f"Score: {arguments['sentiment_score']} || Analysis: {arguments['sentiment_summary']}")
+
+    if json_output:
+        output = {}
+        if not args.no_summary:
+            output['summary'] = summary
+        if not args.no_sentiment:
+            output['sentiment'] = {'score': arguments['sentiment_score'], 'analysis': arguments['sentiment_summary']}
+        print(json.dumps(output))
 
 if __name__ == '__main__':
     main()
