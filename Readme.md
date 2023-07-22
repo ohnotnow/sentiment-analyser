@@ -49,6 +49,8 @@ The tool also accepts the following optional command-line flags:
 
 - `--max_tokens=<number>`: The maximum number of OpenAI tokens in a request (default: 3000)
 - `--quiet`: If set, the tool will not log anything, it will just print the response
+- `--no-summary`: If passed, the tool will not perform a summary of the text
+- `--no-analysis`: If passed, the tool will not perform sentiment analysis
 
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 
