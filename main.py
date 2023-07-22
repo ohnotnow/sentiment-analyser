@@ -12,6 +12,12 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from bs4 import BeautifulSoup
 from bs4.element import Comment
 
+openai.api_key = os.getenv('OPENAI_API_KEY')
+openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo-16k')
+if not openai.api_key:
+    print('You need to set the OPENAI_API_KEY environment variable.')
+    exit(1)
+
 def print_info(message, quiet=False):
     if quiet:
         return
@@ -33,13 +39,6 @@ def get_prompt_text(prompt_name, quiet=False):
         elif prompt_name == 'sentiment':
             prompt = "Could you tell me the sentiment of this text?"
     return prompt
-
-openai.api_key = os.getenv('OPENAI_API_KEY')
-openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo-16k')
-
-if not openai.api_key:
-    print('You need to set the OPENAI_API_KEY environment variable.')
-    exit(1)
 
 def get_sentiment(text, sentiment_prompt):
     functions = [
@@ -192,7 +191,11 @@ def main():
     sentiment_prompt = get_prompt_text('sentiment', quiet)
 
     summary = '';
-    arguments = '';
+    result_dict = {
+        'summary': '',
+        'sentiment_score': 0,
+        'sentiment_analysis': 'N/A'
+    };
 
     print_info(f"Getting text from {url}", quiet)
     text = get_text_from_url(url)
@@ -201,27 +204,34 @@ def main():
     if not args.no_summary:
         print_info(f"Getting summary of {len(text)} characters", quiet)
         summary = get_summary(text, summary_prompt)
+        result_dict['summary'] = summary
         if not json_output:
             print('Summary:')
-            print(summary)
+            print(result_dict['summary'])
 
     if not args.no_sentiment:
         print_info(f"Getting sentiment of {len(text)} characters", quiet)
         sentiment = get_sentiment(text, sentiment_prompt)
         sentiment_dict = sentiment.to_dict()
         # Parse the inner JSON structure
-        arguments = json.loads(sentiment_dict['arguments'])
+        function_result = json.loads(sentiment_dict['arguments'])
+
+        if function_result['sentiment_score']:
+            result_dict['sentiment_score'] = function_result['sentiment_score']
+
+        if function_result['sentiment_summary']:
+            result_dict['sentiment_analysis'] = function_result['sentiment_summary']
 
         if not json_output:
             print('Sentiment:')
-            print(f"Score: {arguments['sentiment_score']} || Analysis: {arguments['sentiment_summary']}")
+            print(f"Score: {result_dict['sentiment_score']} || Analysis: {result_dict['sentiment_summary']}")
 
     if json_output:
         output = {}
         if not args.no_summary:
             output['summary'] = summary
         if not args.no_sentiment:
-            output['sentiment'] = {'score': arguments['sentiment_score'], 'analysis': arguments['sentiment_summary']}
+            output['sentiment'] = {'score': result_dict['sentiment_score'], 'analysis': result_dict['sentiment_analysis']}
         print(json.dumps(output))
 
 if __name__ == '__main__':
