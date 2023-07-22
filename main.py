@@ -176,6 +176,8 @@ def main():
     parser.add_argument('url', type=str, help='The URL to process')
     parser.add_argument('--max_tokens', type=int, default=3000, help='The maximum number of OpenAI tokens in a request')
     parser.add_argument('--quiet', type=bool, default=False, help='Don\'t log anything - just print the response')
+    parser.add_argument('--no-summary', action='store_true', help='Do not generate a summary')
+    parser.add_argument('--no-sentiment', action='store_true', help='Do not generate a sentiment analysis')
 
     args = parser.parse_args()
 
@@ -187,19 +189,21 @@ def main():
     text = get_text_from_url(url)
     print_info(f"Got {len(text)} characters from {url}", quiet)
 
-    print_info(f"Getting summary of {len(text)} characters", quiet)
-    summary = get_summary(text)
+    if not args.no_summary:
+        print_info(f"Getting summary of {len(text)} characters", quiet)
+        summary = get_summary(text)
+        print('Summary:')
+        print(summary)
 
-    print_info(f"Getting sentiment of {len(text)} characters", quiet)
-    sentiment = get_sentiment(text)
-    sentiment_dict = sentiment.to_dict()
-    # Parse the inner JSON structure
-    arguments = json.loads(sentiment_dict['arguments'])
+    if not args.no_sentiment:
+        print_info(f"Getting sentiment of {len(text)} characters", quiet)
+        sentiment = get_sentiment(text)
+        sentiment_dict = sentiment.to_dict()
+        # Parse the inner JSON structure
+        arguments = json.loads(sentiment_dict['arguments'])
 
-    print('Summary:')
-    print(summary)
-    print('Sentiment:')
-    print(f"Score: {arguments['sentiment_score']} || Analysis: {arguments['sentiment_summary']}")
+        print('Sentiment:')
+        print(f"Score: {arguments['sentiment_score']} || Analysis: {arguments['sentiment_summary']}")
 
 if __name__ == '__main__':
     main()
