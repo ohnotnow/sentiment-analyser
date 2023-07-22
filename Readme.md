@@ -59,6 +59,7 @@ For example, to process a URL with a maximum of 2000 tokens and without logging,
 python main.py --max_tokens=2000 --quiet https://www.example.com
 ```
 
+See also the example `batch.sh` for an example of using the command to process a long list of URL's.
 ## Output
 
 The tool will print the summary and sentiment analysis of the text found at the URL. The sentiment analysis includes a score from 0 (very bad) to 10 (very good) and a short summary of the sentiment.  Example from a review of an Air Fryer :
