@@ -58,4 +58,10 @@ For example, to process a URL with a maximum of 2000 tokens and without logging,
 
 ## Output
 
-The tool will print the summary and sentiment analysis of the text found at the URL. The sentiment analysis includes a score from 0 (very bad) to 10 (very good) and a short summary of the sentiment.
+The tool will print the summary and sentiment analysis of the text found at the URL. The sentiment analysis includes a score from 0 (very bad) to 10 (very good) and a short summary of the sentiment.  Example from a review of an Air Fryer :
+```
+Summary: The COSORI Lite air fryer is a compact and affordable option for those looking for an air fryer. It has a sleek design and offers advanced features such as preheat and keep warm functions. It performed well in cooking tests, producing golden and fluffy chips, quick and hot frozen bites, crispy air-fried broccoli, and evenly cooked bacon. The air fryer is easy to use with its touch screen panel and LED screen. It also comes with helpful presets for chicken, fries, bacon, steak, and veggies. The COSORI Lite air fryer is recommended for small households of two to three people. It is energy-efficient and comes with a recipe booklet and access to the COSORI app for more ideas. Overall, it is a good buy for its price and performance.
+
+Sentiment:
+Score: 8 Score: 8 || Analysis: Positive
+```
