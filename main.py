@@ -105,14 +105,14 @@ def get_text_from_pdf(url):
     try:
         response = requests.get(url)
         file = BytesIO(response.content)
-        pdf_reader = PyPDF2.PdfFileReader(file)
+        pdf_reader = PyPDF2.PdfReader(file)
         text = ""
-        for page_num in range(pdf_reader.getNumPages()):
-            page = pdf_reader.getPage(page_num)
-            text += page.extractText()
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
         return text
-    except:
+    except Exception as e:
         print(f"Could not get pdf text for {url}")
+        print(e)
         exit(1)
 
 def tag_visible(element):
