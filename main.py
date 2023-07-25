@@ -74,7 +74,7 @@ def get_sentiment(text, sentiment_prompt):
     ]
     return get_openai_response(messages, max_retries=5, functions=functions, function_call=function_call)
 
-def get_summary(text, summary_prompt):
+def get_summary(text, summary_prompt, strict=False):
     messages = [
         {
             "role": "system",
@@ -85,7 +85,7 @@ def get_summary(text, summary_prompt):
             "content": f"{summary_prompt} :: {text}"
         }
     ]
-    return get_openai_response(messages, max_retries=5)
+    return get_openai_response(messages, max_retries=5, strict=strict)
 
 def get_text_from_youtube(url):
     video_id = url.split('watch?v=')[-1]
@@ -140,13 +140,18 @@ def get_text_from_url(url):
         return get_text_from_plain_url(url)
 
 
-def get_openai_response(messages, max_retries=5, functions=None, function_call=None):
+def get_openai_response(messages, max_retries=5, functions=None, function_call=None, strict=False):
+    if strict:
+        temperature = 0.1
+    else:
+        temperature = 1.0
     for i in range(max_retries):
         try:
              # Create a dictionary with the arguments for the create() method
             kwargs = {
                 'model': openai_model,
-                'messages': messages
+                'messages': messages,
+                'temperature': temperature,
             }
 
             # Add the optional arguments to the dictionary if they are not None
@@ -178,6 +183,7 @@ def main():
     parser.add_argument('--json', action='store_true', help='Output the result as json (implies --quiet)')
     parser.add_argument('--summary-prompt', type=str, default="", help='Set the summary prompt inline')
     parser.add_argument('--sentiment-prompt', type=str, default="", help='Set the sentiment prompt inline')
+    parser.add_argument('--strict', action='store_true', help='Makes the summary more "stright down the line"')
 
     args = parser.parse_args()
 
@@ -211,7 +217,7 @@ def main():
 
     if not args.no_summary:
         print_info(f"Getting summary of {len(text)} characters", quiet)
-        summary = get_summary(text, summary_prompt)
+        summary = get_summary(text, summary_prompt, strict=args.strict)
         result_dict['summary'] = summary
         if not json_output:
             print('Summary:')

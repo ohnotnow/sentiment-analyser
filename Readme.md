@@ -54,6 +54,7 @@ The tool also accepts the following optional command-line flags:
 - `--json`: If passed, the tool outputs the results as a json string
 - `--summary-prompt`: Set the summary prompt inline (eg, `--summary-prompt="Could you summarise this in bullet points?"`)
 - `--sentiment-prompt`: Set the sentiment prompt inline
+- `--strict`: Set the summary to be more 'straight down the line' and less 'creative'
 
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 
