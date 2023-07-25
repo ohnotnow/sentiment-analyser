@@ -224,7 +224,7 @@ def main():
 
         if not json_output:
             print('Sentiment:')
-            print(f"Score: {result_dict['sentiment_score']} || Analysis: {result_dict['sentiment_summary']}")
+            print(f"Score: {result_dict['sentiment_score']} || Analysis: {result_dict['sentiment_analysis']}")
 
     if json_output:
         output = {}
