@@ -176,6 +176,8 @@ def main():
     parser.add_argument('--no-summary', action='store_true', help='Do not generate a summary')
     parser.add_argument('--no-sentiment', action='store_true', help='Do not generate a sentiment analysis')
     parser.add_argument('--json', action='store_true', help='Output the result as json (implies --quiet)')
+    parser.add_argument('--summary-prompt', type=str, default="", help='Set the summary prompt inline')
+    parser.add_argument('--sentiment-prompt', type=str, default="", help='Set the sentiment prompt inline')
 
     args = parser.parse_args()
 
@@ -187,8 +189,14 @@ def main():
     if json_output:
         quiet = True
 
-    summary_prompt = get_prompt_text('summary', quiet)
-    sentiment_prompt = get_prompt_text('sentiment', quiet)
+    if not args.summary_prompt:
+        summary_prompt = get_prompt_text('summary', quiet)
+    else:
+        summary_prompt = args.summary_prompt
+    if not args.sentiment_prompt:
+        sentiment_prompt = get_prompt_text('sentiment', quiet)
+    else:
+        sentiment_prompt = args.sentiment_prompt
 
     summary = '';
     result_dict = {

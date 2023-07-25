@@ -52,6 +52,8 @@ The tool also accepts the following optional command-line flags:
 - `--no-summary`: If passed, the tool will not perform a summary of the text
 - `--no-analysis`: If passed, the tool will not perform sentiment analysis
 - `--json`: If passed, the tool outputs the results as a json string
+- `--summary-prompt`: Set the summary prompt inline (eg, `--summary-prompt="Could you summarise this in bullet points?"`)
+- `--sentiment-prompt`: Set the sentiment prompt inline
 
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 
