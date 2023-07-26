@@ -5,12 +5,15 @@ from io import BytesIO
 import requests
 import time
 import argparse
+import subprocess
 import json
 import PyPDF2
 import openai
 from youtube_transcript_api import YouTubeTranscriptApi
 from bs4 import BeautifulSoup
 from bs4.element import Comment
+from pydub import AudioSegment
+import pytube
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo-16k')
@@ -87,7 +90,36 @@ def get_summary(text, summary_prompt, strict=False):
     ]
     return get_openai_response(messages, max_retries=5, strict=strict)
 
-def get_text_from_youtube(url):
+def get_text_from_youtube_audio(url):
+    print_info("Extracting audio and using Whisper to convert to text")
+    yt = pytube.YouTube(url)
+    t = yt.streams.filter(only_audio=True)
+    filename = t[0].download()
+    if os.path.exists("outout.mp3"):
+        os.remove("output.mp3")
+    subprocess.run(["ffmpeg" , "-vn" , "-sn" , "-dn" , "-i" , filename , "-codec:a" , "libmp3lame" , "-qscale:a" , "4" , "output.mp3"])
+
+    audio = AudioSegment.from_mp3("output.mp3")
+
+    # PyDub handles time in milliseconds
+    ten_minutes = 10 * 60 * 1000
+
+    text = ""
+    for i, chunk in enumerate(audio[::ten_minutes]):
+        with open("chunk.mp3", "wb") as f:
+            chunk.export(f, format="mp3")
+        audio_file = open("chunk.mp3", "rb")
+        text += openai.Audio.transcribe("whisper-1", audio_file)['text']
+        audio_file.close()
+    if os.path.exists("chunk.mp3"):
+        os.remove("chunk.mp3")
+    if os.path.exists("output.mp3"):
+        os.remove("output.mp3")
+    if os.path.exists(filename):
+        os.remove(filename)
+    return text
+
+def get_text_from_youtube(url, fallback_audio=False):
     video_id = url.split('watch?v=')[-1]
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
@@ -95,7 +127,11 @@ def get_text_from_youtube(url):
         text = " ".join([i['text'] for i in transcript.fetch()])
     except:
         print(f"Could not get transcript for {url}")
-        exit(1)
+        if fallback_audio:
+            text = get_text_from_youtube_audio(url)
+        else:
+            exit(1)
+
     return text
 
 def get_text_from_pdf(url):
@@ -130,10 +166,10 @@ def get_text_from_plain_url(url):
         print(f"Could not get text for {url}")
         exit(1)
 
-def get_text_from_url(url):
+def get_text_from_url(url, fallback_audio=False):
     parsed = urllib.parse.urlparse(url)
     if "youtube.com" in parsed.netloc:
-        return get_text_from_youtube(url)
+        return get_text_from_youtube(url, fallback_audio=fallback_audio)
     elif re.search(r'\.pdf$', parsed.path, re.IGNORECASE):
         return get_text_from_pdf(url)
     else:
@@ -184,7 +220,7 @@ def main():
     parser.add_argument('--summary-prompt', type=str, default="", help='Set the summary prompt inline')
     parser.add_argument('--sentiment-prompt', type=str, default="", help='Set the sentiment prompt inline')
     parser.add_argument('--strict', action='store_true', help='Makes the summary more "stright down the line"')
-
+    parser.add_argument('--allow-audio', action='store_true', help='Use the whisper API to transcribe youtube videos with no transcript (requires ffmpeg)')
     args = parser.parse_args()
 
     url = args.url
@@ -212,7 +248,7 @@ def main():
     };
 
     print_info(f"Getting text from {url}", quiet)
-    text = get_text_from_url(url)
+    text = get_text_from_url(url, fallback_audio=args.allow_audio)
     print_info(f"Got {len(text)} characters from {url}", quiet)
 
     if not args.no_summary:
