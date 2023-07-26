@@ -95,26 +95,28 @@ def get_text_from_youtube_audio(url):
     yt = pytube.YouTube(url)
     t = yt.streams.filter(only_audio=True)
     filename = t[0].download()
-    if os.path.exists("outout.mp3"):
-        os.remove("output.mp3")
-    subprocess.run(["ffmpeg" , "-vn" , "-sn" , "-dn" , "-i" , filename , "-codec:a" , "libmp3lame" , "-qscale:a" , "4" , "output.mp3"])
+    output_filename =  f"output_{os.getpid()}.mp3"
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
+    subprocess.run(["ffmpeg" , "-vn" , "-sn" , "-dn" , "-i" , filename , "-codec:a" , "libmp3lame" , "-qscale:a" , "4" , output_filename])
 
-    audio = AudioSegment.from_mp3("output.mp3")
+    audio = AudioSegment.from_mp3(output_filename)
 
     # PyDub handles time in milliseconds
     ten_minutes = 10 * 60 * 1000
 
     text = ""
+    chunk_filename = f"chunk_{os.getpid()}.mp3"
     for i, chunk in enumerate(audio[::ten_minutes]):
-        with open("chunk.mp3", "wb") as f:
+        with open(chunk_filename, "wb") as f:
             chunk.export(f, format="mp3")
-        audio_file = open("chunk.mp3", "rb")
+        audio_file = open(chunk_filename, "rb")
         text += openai.Audio.transcribe("whisper-1", audio_file)['text']
         audio_file.close()
-    if os.path.exists("chunk.mp3"):
-        os.remove("chunk.mp3")
-    if os.path.exists("output.mp3"):
-        os.remove("output.mp3")
+    if os.path.exists(chunk_filename):
+        os.remove(chunk_filename)
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
     if os.path.exists(filename):
         os.remove(filename)
     return text
