@@ -173,6 +173,26 @@ def get_openai_response(messages, max_retries=5, functions=None, function_call=N
             else:
                 raise  # re-throw the last exception if all retries fail
 
+def api(url, summary_prompt="", sentiment_prompt="", max_tokens=3000, skip_summary=False, skip_sentiment=False):
+    text = get_text_from_url(url)
+    if not summary_prompt:
+        summary_prompt = get_prompt_text('summary')
+    if not sentiment_prompt:
+        sentiment_prompt = get_prompt_text('sentiment')
+    if not skip_summary:
+        summary = get_summary(text, summary_prompt)
+    else:
+        summary = ""
+    if not skip_sentiment:
+        sentiment = get_sentiment(text, sentiment_prompt)
+    else:
+        sentiment = {'sentiment_score': 0, 'sentiment_analisys': 'N/A'}
+    return {
+        'summary': summary,
+        'sentiment_score': sentiment['sentiment_score'],
+        'sentiment_analysis': sentiment['sentiment_analisys']
+    }
+
 def main():
     parser = argparse.ArgumentParser(description='Process some URL.')
     parser.add_argument('url', type=str, help='The URL to process')
