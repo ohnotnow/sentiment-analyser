@@ -90,7 +90,7 @@ def get_summary(text, summary_prompt, strict=False):
     ]
     return get_openai_response(messages, max_retries=5, strict=strict)
 
-def get_text_from_youtube_audio(url):
+def get_text_from_youtube_audio(url: str) -> str:
     print_info("Extracting audio and using Whisper to convert to text")
     yt = pytube.YouTube(url)
     t = yt.streams.filter(only_audio=True)
@@ -121,8 +121,9 @@ def get_text_from_youtube_audio(url):
         os.remove(filename)
     return text
 
-def get_text_from_youtube(url, fallback_audio=False):
+def get_text_from_youtube(url: str, fallback_audio=False) -> str:
     video_id = url.split('watch?v=')[-1]
+    text = ""
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_transcript(['en'])
@@ -136,7 +137,7 @@ def get_text_from_youtube(url, fallback_audio=False):
 
     return text
 
-def get_text_from_pdf(url):
+def get_text_from_pdf(url: str) -> str:
     try:
         response = requests.get(url)
         file = BytesIO(response.content)
@@ -178,7 +179,9 @@ def get_text_from_url(url, fallback_audio=False):
         return get_text_from_plain_url(url)
 
 
-def get_openai_response(messages, max_retries=5, functions=None, function_call=None, strict=False):
+from typing import List, Dict, Optional
+
+def get_openai_response(messages: List[str], max_retries: int = 5, functions: Optional[Dict[str, str]] = None, function_call: Optional[str] = None, strict: bool = False) -> str:
     if strict:
         temperature = 0.1
     else:
