@@ -2,3 +2,6 @@ PyPDF2
 openai
 youtube_transcript_api
 bs4
+pydub
+pytube
+

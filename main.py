@@ -5,12 +5,15 @@ from io import BytesIO
 import requests
 import time
 import argparse
+import subprocess
 import json
 import PyPDF2
 import openai
 from youtube_transcript_api import YouTubeTranscriptApi
 from bs4 import BeautifulSoup
 from bs4.element import Comment
+from pydub import AudioSegment
+import pytube
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo-16k')
@@ -87,18 +90,54 @@ def get_summary(text, summary_prompt, strict=False):
     ]
     return get_openai_response(messages, max_retries=5, strict=strict)
 
-def get_text_from_youtube(url):
+def get_text_from_youtube_audio(url: str) -> str:
+    print_info("Extracting audio and using Whisper to convert to text")
+    yt = pytube.YouTube(url)
+    t = yt.streams.filter(only_audio=True)
+    filename = t[0].download()
+    output_filename =  f"output_{os.getpid()}.mp3"
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
+    subprocess.run(["ffmpeg" , "-vn" , "-sn" , "-dn" , "-i" , filename , "-codec:a" , "libmp3lame" , "-qscale:a" , "4" , output_filename])
+
+    audio = AudioSegment.from_mp3(output_filename)
+
+    # PyDub handles time in milliseconds
+    ten_minutes = 10 * 60 * 1000
+
+    text = ""
+    chunk_filename = f"chunk_{os.getpid()}.mp3"
+    for i, chunk in enumerate(audio[::ten_minutes]):
+        with open(chunk_filename, "wb") as f:
+            chunk.export(f, format="mp3")
+        audio_file = open(chunk_filename, "rb")
+        text += openai.Audio.transcribe("whisper-1", audio_file)['text']
+        audio_file.close()
+    if os.path.exists(chunk_filename):
+        os.remove(chunk_filename)
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
+    if os.path.exists(filename):
+        os.remove(filename)
+    return text
+
+def get_text_from_youtube(url: str, fallback_audio=False) -> str:
     video_id = url.split('watch?v=')[-1]
+    text = ""
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_transcript(['en'])
         text = " ".join([i['text'] for i in transcript.fetch()])
     except:
         print(f"Could not get transcript for {url}")
-        exit(1)
+        if fallback_audio:
+            text = get_text_from_youtube_audio(url)
+        else:
+            exit(1)
+
     return text
 
-def get_text_from_pdf(url):
+def get_text_from_pdf(url: str) -> str:
     try:
         response = requests.get(url)
         file = BytesIO(response.content)
@@ -130,17 +169,19 @@ def get_text_from_plain_url(url):
         print(f"Could not get text for {url}")
         exit(1)
 
-def get_text_from_url(url):
+def get_text_from_url(url, fallback_audio=False):
     parsed = urllib.parse.urlparse(url)
     if "youtube.com" in parsed.netloc:
-        return get_text_from_youtube(url)
+        return get_text_from_youtube(url, fallback_audio=fallback_audio)
     elif re.search(r'\.pdf$', parsed.path, re.IGNORECASE):
         return get_text_from_pdf(url)
     else:
         return get_text_from_plain_url(url)
 
 
-def get_openai_response(messages, max_retries=5, functions=None, function_call=None, strict=False):
+from typing import List, Dict, Optional
+
+def get_openai_response(messages: List[str], max_retries: int = 5, functions: Optional[Dict[str, str]] = None, function_call: Optional[str] = None, strict: bool = False) -> str:
     if strict:
         temperature = 0.1
     else:
@@ -204,7 +245,7 @@ def main():
     parser.add_argument('--summary-prompt', type=str, default="", help='Set the summary prompt inline')
     parser.add_argument('--sentiment-prompt', type=str, default="", help='Set the sentiment prompt inline')
     parser.add_argument('--strict', action='store_true', help='Makes the summary more "stright down the line"')
-
+    parser.add_argument('--allow-audio', action='store_true', help='Use the whisper API to transcribe youtube videos with no transcript (requires ffmpeg)')
     args = parser.parse_args()
 
     url = args.url
@@ -232,7 +273,7 @@ def main():
     };
 
     print_info(f"Getting text from {url}", quiet)
-    text = get_text_from_url(url)
+    text = get_text_from_url(url, fallback_audio=args.allow_audio)
     print_info(f"Got {len(text)} characters from {url}", quiet)
 
     if not args.no_summary:

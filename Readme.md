@@ -55,6 +55,7 @@ The tool also accepts the following optional command-line flags:
 - `--summary-prompt`: Set the summary prompt inline (eg, `--summary-prompt="Could you summarise this in bullet points?"`)
 - `--sentiment-prompt`: Set the sentiment prompt inline
 - `--strict`: Set the summary to be more 'straight down the line' and less 'creative'
+- `--allow-audio`: If no youtube transcript is found, use OpenAI to transcribe the audio (~US$0.12 for 10 minutes + requires `ffmpeg`)
 
 For example, to process a URL with a maximum of 2000 tokens and without logging, you would run:
 
