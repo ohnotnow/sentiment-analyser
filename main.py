@@ -21,6 +21,8 @@ if not openai.api_key:
     print('You need to set the OPENAI_API_KEY environment variable.')
     exit(1)
 
+
+
 def print_info(message, quiet=False):
     if quiet:
         return

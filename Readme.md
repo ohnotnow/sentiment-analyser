@@ -64,6 +64,17 @@ python main.py --max_tokens=2000 --quiet https://www.example.com
 ```
 
 See also the example `batch.sh` for an example of using the command to process a long list of URL's.
+
+You can also try running it as Flask HTTP API :
+```bash
+python api.py
+```
+Then you can post data to the endpoint and get a json response.  Eg,
+```bash
+curl -X POST -H 'content-type: application/json' -d '{"url": "https://www.example.com"}' http://127.0.0.1:5000/api/summarise
+```
+Note that Flask will only handle one request at a time.  If you want to use this 'for real' then either look into 'gunicorn' or something like 'OpenFaaS' which will allow you to scale it better.
+
 ## Output
 
 The tool will print the summary and sentiment analysis of the text found at the URL. The sentiment analysis includes a score from 0 (very bad) to 10 (very good) and a short summary of the sentiment.  Example from a review of an Air Fryer :
